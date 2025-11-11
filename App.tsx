@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AminaShopProvider, useAminaShop } from './context/AminaShopContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { Dashboard } from './components/pages/Dashboard';
@@ -16,8 +16,8 @@ import { Module, Notification, User } from './types';
 import { permissions } from './components/utils/permissions';
 
 const AppContent: React.FC = () => {
-  const { state } = useAminaShop();
-  const { currentUser } = state;
+  const { state, actions } = useAminaShop();
+  const { currentUser, backupSettings } = state;
 
   const [activeModule, setActiveModule] = useState<Module>('dashboard');
   const [clientPageFilter, setClientPageFilter] = useState<'all' | 'debt'>('all');
@@ -25,6 +25,68 @@ const AppContent: React.FC = () => {
   const [orderToView, setOrderToView] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   
+  const addNotification = (message: string) => {
+    const newNotification: Notification = {
+      id: Date.now(),
+      message,
+      read: false,
+      timestamp: new Date(),
+    };
+    setNotifications(prev => [newNotification, ...prev].slice(0, 10));
+  };
+  
+  useEffect(() => {
+    const backupInterval = setInterval(() => {
+      if (!backupSettings.enabled) return;
+
+      const now = new Date();
+      const [hours, minutes] = backupSettings.time.split(':').map(Number);
+      
+      const scheduledTimeToday = new Date();
+      scheduledTimeToday.setHours(hours, minutes, 0, 0);
+
+      const lastBackup = backupSettings.lastBackupTimestamp ? new Date(backupSettings.lastBackupTimestamp) : new Date(0);
+
+      const isTimeForBackup = now >= scheduledTimeToday && lastBackup < scheduledTimeToday;
+
+      if (isTimeForBackup) {
+          const hoursSinceLastBackup = (now.getTime() - lastBackup.getTime()) / (1000 * 60 * 60);
+          
+          let shouldBackup = false;
+          if (backupSettings.frequency === 'daily' && hoursSinceLastBackup >= 23) {
+            shouldBackup = true;
+          } else if (backupSettings.frequency === 'weekly' && hoursSinceLastBackup >= (24 * 7 - 1)) {
+            shouldBackup = true;
+          }
+
+          if (shouldBackup) {
+              console.log('Déclenchement de la sauvegarde automatique...');
+              try {
+                const { currentUser, ...stateToSave } = state;
+                const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+                    JSON.stringify(stateToSave, null, 2)
+                )}`;
+                const link = document.createElement("a");
+                link.href = jsonString;
+                const date = new Date().toISOString().slice(0, 10);
+                link.download = `chicandmix_backup_auto_${date}.json`;
+                link.click();
+
+                actions.updateLastBackupTimestamp(Date.now());
+                addNotification("Sauvegarde automatique des données effectuée avec succès.");
+              } catch (error) {
+                  console.error("Échec de la sauvegarde automatique :", error);
+                  addNotification("Erreur : La sauvegarde automatique a échoué.");
+              }
+          }
+      }
+
+    }, 60000); // Check every minute
+
+    return () => clearInterval(backupInterval);
+  }, [backupSettings, state, actions, addNotification]);
+
+
   if (!currentUser) {
     return <LoginPage />;
   }
@@ -50,16 +112,6 @@ const AppContent: React.FC = () => {
   const handleViewOrder = (orderId: string) => {
     setOrderToView(orderId);
     handleSetActiveModule('orders');
-  };
-
-  const addNotification = (message: string) => {
-    const newNotification: Notification = {
-      id: Date.now(),
-      message,
-      read: false,
-      timestamp: new Date(),
-    };
-    setNotifications(prev => [newNotification, ...prev].slice(0, 10));
   };
 
   const markNotificationsAsRead = () => {

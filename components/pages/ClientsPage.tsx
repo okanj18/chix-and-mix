@@ -1,8 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
 import { Client } from '../../types';
 import { Card, Button, Input, Modal, useSortableData, SortableHeader, Textarea } from '../ui/Shared';
-import { PlusIcon, EyeIcon, StarIcon, ChatBubbleLeftRightIcon, SparklesIcon, ClipboardDocumentIcon } from '../icons';
+import { PlusIcon, EyeIcon, StarIcon, ChatBubbleLeftRightIcon, SparklesIcon, ClipboardDocumentIcon, DocumentArrowDownIcon } from '../icons';
 import { GoogleGenAI } from "@google/genai";
 
 const ClientForm: React.FC<{ client?: Client; onClose: () => void }> = ({ client, onClose }) => {
@@ -232,6 +233,42 @@ const ClientDetailView: React.FC<{ client: ClientWithDetails }> = ({ client }) =
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatingType, setGeneratingType] = useState<string | null>(null);
     const [copySuccess, setCopySuccess] = useState(false);
+
+    const handleGenerateSummary = () => {
+        const lastOrder = orders
+            .filter(o => o.clientId === client.id && !o.isArchived)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+        let summaryText = `*** RÉSUMÉ CLIENT - CHIC & MIX ***\n\n`;
+        summaryText += `Date de génération: ${new Date().toLocaleString('fr-FR')}\n`;
+        summaryText += `------------------------------------\n\n`;
+        summaryText += `CLIENT\n`;
+        summaryText += `Nom: ${client.firstName} ${client.lastName}\n`;
+        summaryText += `Téléphone: ${client.phone || 'N/A'}\n`;
+        summaryText += `Email: ${client.email || 'N/A'}\n\n`;
+        summaryText += `SITUATION FINANCIÈRE\n`;
+        summaryText += `Solde total dû: ${client.debt.toLocaleString()} FCFA\n\n`;
+        summaryText += `ACTIVITÉ RÉCENTE\n`;
+        if (lastOrder) {
+            summaryText += `Dernière commande: ${new Date(lastOrder.date).toLocaleDateString('fr-FR')}\n`;
+            summaryText += `Montant dernière commande: ${Number(lastOrder.total || 0).toLocaleString()} FCFA\n`;
+            summaryText += `Statut paiement: ${lastOrder.paymentStatus}\n`;
+        } else {
+            summaryText += `Dernière commande: Aucune commande enregistrée\n`;
+        }
+        summaryText += `\n------------------------------------\n`;
+        summaryText += `Rapport généré par l'application de gestion CHIC & MIX.`;
+
+        const blob = new Blob([summaryText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Resume_Client_${client.firstName}_${client.lastName}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
     
     const handleGenerateMessage = async (type: 'reminder' | 'thanks' | 'promo') => {
         setGeneratingType(type);
@@ -306,14 +343,22 @@ const ClientDetailView: React.FC<{ client: ClientWithDetails }> = ({ client }) =
                 {activeTab === 'summary' && (
                     <div className="space-y-6">
                         <div>
-                            <h3 className="font-semibold text-lg text-gray-800 mb-2">{client.firstName} {client.lastName}</h3>
-                            <p className="text-sm text-gray-600"><strong>Téléphone:</strong> {client.phone}</p>
-                            <p className="text-sm text-gray-600"><strong>Email:</strong> {client.email || 'N/A'}</p>
-                            <p className="text-sm text-gray-600"><strong>Adresse:</strong> {client.address || 'N/A'}</p>
-                        </div>
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
-                            <p className="text-sm font-medium text-red-800">SOLDE TOTAL DÛ</p>
-                            <p className="text-3xl font-bold text-red-600">{client.debt.toLocaleString()} FCFA</p>
+                             <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="font-semibold text-lg text-gray-800 mb-2">{client.firstName} {client.lastName}</h3>
+                                    <p className="text-sm text-gray-600"><strong>Téléphone:</strong> {client.phone}</p>
+                                    <p className="text-sm text-gray-600"><strong>Email:</strong> {client.email || 'N/A'}</p>
+                                    <p className="text-sm text-gray-600"><strong>Adresse:</strong> {client.address || 'N/A'}</p>
+                                </div>
+                                <Button variant="secondary" size="sm" onClick={handleGenerateSummary}>
+                                    <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
+                                    Générer Résumé
+                                </Button>
+                            </div>
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+                                <p className="text-sm font-medium text-red-800">SOLDE TOTAL DÛ</p>
+                                <p className="text-3xl font-bold text-red-600">{client.debt.toLocaleString()} FCFA</p>
+                            </div>
                         </div>
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2">Détail des commandes impayées</h4>

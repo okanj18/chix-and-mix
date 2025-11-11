@@ -615,7 +615,16 @@ export const InventoryPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedProducts.map(product => (
+              {sortedProducts.map(product => {
+                const sortedVariants = (product.variants && product.variants.length > 0)
+                    ? [...product.variants].sort((a, b) => {
+                        const sizeCompare = (a.size || '').localeCompare(b.size || '', undefined, { numeric: true });
+                        if (sizeCompare !== 0) return sizeCompare;
+                        return (a.color || '').localeCompare(b.color || '', undefined, { numeric: true });
+                    })
+                    : [];
+
+                return (
                 <React.Fragment key={product.id}>
                   <tr className="hover:bg-gray-50">
                     <td className="px-2 py-4 whitespace-nowrap text-center">
@@ -648,7 +657,7 @@ export const InventoryPage: React.FC = () => {
                             </div>
                             {product.variants && product.variants.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2 max-w-[200px]">
-                                    {product.variants.slice(0, 3).map((variant, index) => {
+                                    {sortedVariants.slice(0, 3).map((variant, index) => {
                                         const variantName = [variant.size, variant.color].filter(Boolean).join('/');
                                         if (!variantName) return null;
                                         const stockLevel = variant.quantity;
@@ -696,7 +705,7 @@ export const InventoryPage: React.FC = () => {
                                               </tr>
                                           </thead>
                                           <tbody className="divide-y divide-gray-200">
-                                              {product.variants.map((variant, index) => (
+                                              {sortedVariants.map((variant, index) => (
                                                   <tr key={index} className="hover:bg-gray-50">
                                                       <td className="px-4 py-2">{variant.size || '-'}</td>
                                                       <td className="px-4 py-2">{variant.color || '-'}</td>
@@ -714,7 +723,7 @@ export const InventoryPage: React.FC = () => {
                     </tr>
                   )}
                 </React.Fragment>
-              ))}
+              )})}
                {sortedProducts.length === 0 && (
                   <tr>
                       <td colSpan={8} className="text-center py-8 text-gray-500">

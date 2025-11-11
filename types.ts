@@ -157,4 +157,11 @@ export interface User {
   role: UserRole;
 }
 
+export interface BackupSettings {
+  enabled: boolean;
+  frequency: 'daily' | 'weekly';
+  time: string; // "HH:MM" format
+  lastBackupTimestamp: number | null;
+}
+
 export type Module = 'dashboard' | 'inventory' | 'clients' | 'suppliers' | 'productList' | 'orders' | 'approvisionnement' | 'reports' | 'settings';

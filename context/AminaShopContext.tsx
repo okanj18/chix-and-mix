@@ -1,8 +1,12 @@
-
-
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEffect } from 'react';
-import { Product, Client, Supplier, Order, PurchaseOrder, Payment, SupplierPayment, PaymentSchedule, OrderItem, PurchaseOrderItem, Installment, ProductVariant, PaymentStatus, Modification, ProductReturn, ReturnItem, User, UserRole } from '../types';
+import { Product, Client, Supplier, Order, PurchaseOrder, Payment, SupplierPayment, PaymentSchedule, OrderItem, PurchaseOrderItem, Installment, ProductVariant, PaymentStatus, Modification, ProductReturn, ReturnItem, User, UserRole, BackupSettings } from '../types';
 import { mockProducts, mockClients, mockSuppliers, mockOrders, mockPurchaseOrders, mockPayments, mockSupplierPayments, mockPaymentSchedules, mockUsers } from '../data/mockData';
+
+const generateUniqueId = (prefix: string): string => {
+  // A simple and effective way to generate a more unique ID than just Date.now()
+  // It combines a prefix, the current timestamp, and a random string.
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
 
 interface AppState {
   products: Product[];
@@ -17,12 +21,13 @@ interface AppState {
   categories: string[];
   users: User[];
   currentUser: User | null;
+  backupSettings: BackupSettings;
 }
 
 type Action =
   | { type: 'LOGIN'; payload: { userId: string, pin: string } }
   | { type: 'LOGOUT' }
-  | { type: 'ADD_USER'; payload: Omit<User, 'id'> }
+  | { type: 'ADD_USER'; payload: User }
   | { type: 'UPDATE_USER'; payload: User }
   | { type: 'DELETE_USER'; payload: string }
   | { type: 'ADD_PRODUCT'; payload: Product }
@@ -50,7 +55,11 @@ type Action =
   | { type: 'ADD_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'UPDATE_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'RECEIVE_PURCHASE_ORDER_ITEMS'; payload: { purchaseOrderId: string; receivedItems: Array<{ item: PurchaseOrderItem; quantityToReceive: number; }> } }
-  | { type: 'ADD_SUPPLIER_PAYMENT'; payload: Omit<SupplierPayment, 'id' | 'date'> };
+  | { type: 'ADD_SUPPLIER_PAYMENT'; payload: Omit<SupplierPayment, 'id' | 'date'> }
+  | { type: 'UPDATE_BACKUP_SETTINGS'; payload: BackupSettings }
+  | { type: 'UPDATE_LAST_BACKUP_TIMESTAMP'; payload: number }
+  | { type: 'RESET_ALL_DATA' }
+  | { type: 'RESTORE_DATA'; payload: AppState };
 
 
 const initialState: AppState = {
@@ -66,6 +75,12 @@ const initialState: AppState = {
   categories: ['Vêtements', 'Accessoires', 'Chaussures'],
   users: mockUsers,
   currentUser: null,
+  backupSettings: {
+    enabled: false,
+    frequency: 'daily',
+    time: '22:00',
+    lastBackupTimestamp: null
+  },
 };
 
 const getInitialState = (): AppState => {
@@ -80,6 +95,7 @@ const getInitialState = (): AppState => {
                 ...parsed, // Override with saved data
                 currentUser: currentUser ? JSON.parse(currentUser) : null,
                 users: parsed.users || mockUsers, // Ensure users are loaded
+                backupSettings: parsed.backupSettings || initialState.backupSettings, // Load backup settings
                 products: (parsed.products || []).map((p: Product) => ({
                     ...p,
                     purchasePrice: Number(p.purchasePrice || 0),
@@ -169,7 +185,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
       sessionStorage.removeItem('aminaShopCurrentUser');
       return { ...state, currentUser: null };
     case 'ADD_USER':
-      return { ...state, users: [...state.users, action.payload as User] };
+      return { ...state, users: [...state.users, action.payload] };
     case 'UPDATE_USER':
       return { ...state, users: state.users.map(u => u.id === (action.payload as User).id ? action.payload as User : u) };
     case 'DELETE_USER':
@@ -212,7 +228,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
       const newOrder: Order = {
         ...action.payload,
-        id: `ord${Date.now()}`,
+        id: generateUniqueId('ord'),
         date: new Date(),
         total,
         paidAmount: paymentStatus === 'Payé' ? total : 0,
@@ -221,7 +237,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         isArchived: false,
       };
       const newPayments = paymentStatus === 'Payé' ? [
-        ...state.payments, { id: `pay${Date.now()}`, orderId: newOrder.id, date: new Date(), amount: total, method: 'Espèces' as const }
+        ...state.payments, { id: generateUniqueId('pay'), orderId: newOrder.id, date: new Date(), amount: total, method: 'Espèces' as const }
       ] : state.payments;
 
       const updatedProducts = state.products.map(product => {
@@ -456,13 +472,13 @@ const appReducer = (state: AppState, action: Action): AppState => {
         });
 
         // 2. Create new return record
-        const newReturn: ProductReturn = { ...action.payload, id: `ret${Date.now()}`, date: new Date() };
+        const newReturn: ProductReturn = { ...action.payload, id: generateUniqueId('ret'), date: new Date() };
 
         // 3. Create refund payment record
         const newPayments = [...state.payments];
         if (Number(refundAmount) > 0) {
             newPayments.push({
-                id: `pay${Date.now()}`,
+                id: generateUniqueId('pay'),
                 orderId,
                 date: new Date(),
                 amount: -Number(refundAmount), // Negative amount for refund
@@ -582,7 +598,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
         return order;
       });
-      const newPayment: Payment = { ...action.payload, id: `pay${Date.now()}`, date: new Date() };
+      const newPayment: Payment = { ...action.payload, id: generateUniqueId('pay'), date: new Date() };
       return { ...state, orders: updatedOrders, payments: [...state.payments, newPayment] };
     }
     case 'UPDATE_PAYMENT': {
@@ -636,7 +652,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'CREATE_PAYMENT_SCHEDULE': {
         const { user } = action.payload;
         const newSchedule: PaymentSchedule = {
-            id: `ps${Date.now()}`,
+            id: generateUniqueId('ps'),
             orderId: action.payload.orderId,
             installments: action.payload.installments.map(i => ({...i, status: 'En attente' }))
         };
@@ -706,7 +722,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
         // 1. Create a payment
         const newPayment: Payment = {
-            id: `pay${Date.now()}`,
+            id: generateUniqueId('pay'),
             orderId: orderId,
             date: new Date(),
             amount: Number(installment.amount),
@@ -814,9 +830,37 @@ const appReducer = (state: AppState, action: Action): AppState => {
             }
             return po;
         });
-        const newPayment: SupplierPayment = { ...action.payload, id: `spay${Date.now()}`, date: new Date() };
+        const newPayment: SupplierPayment = { ...action.payload, id: generateUniqueId('spay'), date: new Date() };
         return { ...state, purchaseOrders: updatedPOs, supplierPayments: [...state.supplierPayments, newPayment] };
     }
+    case 'UPDATE_BACKUP_SETTINGS':
+      return { ...state, backupSettings: action.payload };
+    case 'UPDATE_LAST_BACKUP_TIMESTAMP':
+      return { ...state, backupSettings: { ...state.backupSettings, lastBackupTimestamp: action.payload } };
+    case 'RESET_ALL_DATA':
+        // Keep users and categories, wipe all transactional data for deployment
+        sessionStorage.removeItem('aminaShopCurrentUser');
+        return {
+            ...initialState,
+            products: [],
+            clients: [],
+            suppliers: [],
+            orders: [],
+            returns: [],
+            purchaseOrders: [],
+            payments: [],
+            supplierPayments: [],
+            paymentSchedules: [],
+            currentUser: null,
+        };
+    case 'RESTORE_DATA':
+        // Replace current state with restored data, but keep initial structure and log out
+        sessionStorage.removeItem('aminaShopCurrentUser');
+        return {
+            ...initialState,
+            ...action.payload,
+            currentUser: null,
+        };
     default:
       return state;
   }
@@ -847,16 +891,16 @@ export const AminaShopProvider: React.FC<{ children: ReactNode }> = ({ children 
             return false;
         },
         logout: () => dispatch({ type: 'LOGOUT' }),
-        addUser: (userData: Omit<User, 'id'>) => dispatch({ type: 'ADD_USER', payload: { ...userData, id: `user${Date.now()}` } }),
+        addUser: (userData: Omit<User, 'id'>) => dispatch({ type: 'ADD_USER', payload: { ...userData, id: generateUniqueId('user') } }),
         updateUser: (user: User) => dispatch({ type: 'UPDATE_USER', payload: user }),
         deleteUser: (userId: string) => dispatch({ type: 'DELETE_USER', payload: userId }),
-        addProduct: (productData: Omit<Product, 'id'>) => dispatch({ type: 'ADD_PRODUCT', payload: { ...productData, id: `prod${Date.now()}` } }),
+        addProduct: (productData: Omit<Product, 'id'>) => dispatch({ type: 'ADD_PRODUCT', payload: { ...productData, id: generateUniqueId('prod') } }),
         updateProduct: (product: Product) => dispatch({ type: 'UPDATE_PRODUCT', payload: product }),
         deleteProduct: (productId: string) => dispatch({ type: 'DELETE_PRODUCT', payload: productId }),
         addCategory: (category: string) => dispatch({ type: 'ADD_CATEGORY', payload: category }),
-        addClient: (clientData: Omit<Client, 'id'>) => dispatch({ type: 'ADD_CLIENT', payload: { ...clientData, id: `cli${Date.now()}` } }),
+        addClient: (clientData: Omit<Client, 'id'>) => dispatch({ type: 'ADD_CLIENT', payload: { ...clientData, id: generateUniqueId('cli') } }),
         updateClient: (client: Client) => dispatch({ type: 'UPDATE_CLIENT', payload: client }),
-        addSupplier: (supplierData: Omit<Supplier, 'id'>) => dispatch({ type: 'ADD_SUPPLIER', payload: { ...supplierData, id: `sup${Date.now()}` } }),
+        addSupplier: (supplierData: Omit<Supplier, 'id'>) => dispatch({ type: 'ADD_SUPPLIER', payload: { ...supplierData, id: generateUniqueId('sup') } }),
         updateSupplier: (supplier: Supplier) => dispatch({ type: 'UPDATE_SUPPLIER', payload: supplier }),
         createOrder: (orderData: Omit<Order, 'id' | 'date' | 'paidAmount' | 'total' | 'modificationHistory'> & { paymentStatus: PaymentStatus, discount: number, notes?: string }) => dispatch({ type: 'CREATE_ORDER', payload: { ...orderData, user: userName } }),
         updateOrder: (orderId: string, data: { clientId: string, items: OrderItem[], discount: number, notes: string }) => dispatch({ type: 'UPDATE_ORDER', payload: { orderId, data, user: userName } }),
@@ -875,7 +919,7 @@ export const AminaShopProvider: React.FC<{ children: ReactNode }> = ({ children 
         addPurchaseOrder: (poData: Omit<PurchaseOrder, 'id' | 'date' | 'status' | 'paidAmount' | 'paymentStatus'>) => {
             const newPO: PurchaseOrder = {
                 ...poData,
-                id: `po${Date.now()}`,
+                id: generateUniqueId('po'),
                 date: new Date(),
                 status: 'Envoyée',
                 paidAmount: 0,
@@ -886,6 +930,10 @@ export const AminaShopProvider: React.FC<{ children: ReactNode }> = ({ children 
         updatePurchaseOrder: (purchaseOrder: PurchaseOrder) => dispatch({ type: 'UPDATE_PURCHASE_ORDER', payload: purchaseOrder }),
         receivePurchaseOrderItems: (purchaseOrderId: string, receivedItems: Array<{ item: PurchaseOrderItem; quantityToReceive: number; }>) => dispatch({ type: 'RECEIVE_PURCHASE_ORDER_ITEMS', payload: { purchaseOrderId, receivedItems } }),
         addSupplierPayment: (paymentData: Omit<SupplierPayment, 'id' | 'date'>) => dispatch({ type: 'ADD_SUPPLIER_PAYMENT', payload: paymentData }),
+        resetAllData: () => dispatch({ type: 'RESET_ALL_DATA' }),
+        restoreData: (data: AppState) => dispatch({ type: 'RESTORE_DATA', payload: data }),
+        updateBackupSettings: (settings: BackupSettings) => dispatch({ type: 'UPDATE_BACKUP_SETTINGS', payload: settings }),
+        updateLastBackupTimestamp: (timestamp: number) => dispatch({ type: 'UPDATE_LAST_BACKUP_TIMESTAMP', payload: timestamp }),
     }
   }, [state.currentUser, state.users]);
 
