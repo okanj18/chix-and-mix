@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
 import { Client } from '../../types';
@@ -93,15 +94,14 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({ filter, setFilter }) =
       }
 
       const productCounts = allClientOrders
-          .flatMap(o => o.items)
+          .flatMap(o => o.items || [])
           .reduce((acc, item) => {
               acc[item.productId] = (acc[item.productId] || 0) + Number(item.quantity);
               return acc;
           }, {} as Record<string, number>);
 
       const favoriteProducts = Object.entries(productCounts)
-          // FIX: Explicitly cast values to numbers to prevent type errors during subtraction.
-          .sort((a, b) => Number(b[1]) - Number(a[1]))
+          .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
           .slice(0, 5)
           .map(([productId, quantity]) => ({
               productId,
@@ -286,7 +286,7 @@ const ClientDetailView: React.FC<{ client: ClientWithDetails }> = ({ client }) =
                     prompt = `Rédige un court SMS de remerciement chaleureux pour un client fidèle de ma boutique CHIC & MIX. Nom du client: ${client.firstName}. Mentionne que nous apprécions sa fidélité et que nous espérons le revoir bientôt.`;
                     break;
                 case 'promo':
-                    const favoriteProduct = client.favoriteProducts.length > 0 ? client.favoriteProducts[0].name : 'nos nouveautés';
+                    const favoriteProduct = client.favoriteProducts?.[0]?.name || 'nos nouveautés';
                     prompt = `Rédige un court SMS marketing pour proposer une offre spéciale à un client de ma boutique CHIC & MIX. Nom du client: ${client.firstName}. Suggère-lui qu'il pourrait aimer nos nouveautés, surtout qu'il a déjà acheté "${favoriteProduct}". Propose-lui une petite réduction de 15% sur sa prochaine visite.`;
                     break;
             }

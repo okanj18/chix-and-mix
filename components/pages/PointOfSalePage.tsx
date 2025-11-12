@@ -131,7 +131,8 @@ export const PointOfSalePage: React.FC = () => {
     const filteredProducts = useMemo(() =>
         products.filter(p =>
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+            p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.description.toLowerCase().includes(searchTerm.toLowerCase())
         ),
         [products, searchTerm]
     );
@@ -238,7 +239,7 @@ export const PointOfSalePage: React.FC = () => {
                                 <Input
                                     label="Rechercher un produit"
                                     id="product-search"
-                                    placeholder="Nom ou référence..."
+                                    placeholder="Nom, référence ou description..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />

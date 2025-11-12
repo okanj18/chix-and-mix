@@ -1,3 +1,5 @@
+
+
 import React, { useMemo, useState } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
 import { Card, Button } from '../ui/Shared';
@@ -74,7 +76,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveModule, showClien
     const numberOfSales = filteredOrders.length;
     
     const grossProfit = filteredOrders.reduce((totalProfit, order) => {
-      const orderProfit = order.items.reduce((itemProfit, item) => {
+      const orderItems = order.items || [];
+      const orderProfit = orderItems.reduce((itemProfit, item) => {
         const product = products.find(p => p.id === item.productId);
         if (product) {
           return itemProfit + ((Number(item.price) || 0) - (Number(product.purchasePrice) || 0)) * (Number(item.quantity) || 0);
@@ -151,6 +154,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveModule, showClien
     const client = clients.find(c => c.id === clientId);
     return client ? `${client.firstName} ${client.lastName}` : 'Client Inconnu';
   };
+  
+    if (orders.length === 0 && products.length === 0) {
+        return (
+            <div className="text-center">
+                 <div className="mb-6">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black tracking-wide">
+                        <span className="text-primary-900">CHIC </span>
+                        <span className="text-primary-500 italic">&amp;</span>
+                        <span className="text-primary-900"> MIX</span>
+                    </h1>
+                    <div className="mt-2 h-1.5 w-48 sm:w-56 lg:w-64 bg-primary-300 rounded-full mx-auto" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-gray-800">Bienvenue, {state.currentUser?.name} !</h2>
+                <p className="text-gray-500 mt-2 max-w-xl mx-auto">Votre application de gestion est prête. Commencez par ajouter vos produits ou enregistrer votre première vente.</p>
+                <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                    <Button size="lg" onClick={() => setActiveModule('inventory')}>
+                        <InventoryIcon className="w-5 h-5 mr-2"/>
+                        Ajouter votre premier produit
+                    </Button>
+                    <Button size="lg" variant="secondary" onClick={() => setActiveModule('productList')}>
+                         <POSIcon className="w-5 h-5 mr-2"/>
+                        Effectuer une nouvelle vente
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
   return (
     <div className="space-y-8">
@@ -163,7 +193,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveModule, showClien
             </h1>
             <div className="mt-2 h-1.5 w-48 sm:w-56 lg:w-64 bg-primary-300 rounded-full" />
         </div>
-        <h2 className="text-2xl sm:text-3xl font-serif font-black text-gray-800">Bienvenue, Amina !</h2>
+        <h2 className="text-2xl sm:text-3xl font-serif font-black text-gray-800">Bienvenue, {state.currentUser?.name} !</h2>
         <p className="text-gray-500 mt-1">Voici un aperçu de votre boutique aujourd'hui.</p>
       </div>
 

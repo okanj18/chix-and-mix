@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
 import { User } from '../../types';
-import { Modal } from '../ui/Shared';
+import { Modal, Button } from '../ui/Shared';
 import { UserCircleIcon } from '../icons';
 
 const PinInput: React.FC<{ onPinComplete: (pin: string) => void; onClose: () => void }> = ({ onPinComplete, onClose }) => {
@@ -62,7 +62,7 @@ const PinInput: React.FC<{ onPinComplete: (pin: string) => void; onClose: () => 
 
 export const LoginPage: React.FC = () => {
     const { state, actions } = useAminaShop();
-    const { users } = state;
+    const { users, isInitialized } = state;
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [error, setError] = useState('');
 
@@ -80,6 +80,29 @@ export const LoginPage: React.FC = () => {
             }
         }
     };
+    
+    if (!isInitialized) {
+        return (
+             <div className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-4 text-center">
+                 <div className="mb-10">
+                    <h1 className="text-5xl font-serif font-black">
+                        <span className="text-primary-900">CHIC </span>
+                        <span className="text-primary-500 italic">&amp;</span>
+                        <span className="text-primary-900"> MIX</span>
+                    </h1>
+                </div>
+                <div className="bg-white p-8 rounded-lg shadow-md max-w-lg">
+                    <h2 className="text-2xl font-bold text-gray-800">Bienvenue !</h2>
+                    <p className="text-gray-600 mt-4">Votre application est prête à être configurée. Vous pouvez commencer avec une base de données vide ou charger un jeu de données de démonstration pour explorer les fonctionnalités.</p>
+                    <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                        <Button size="lg" variant="primary" onClick={actions.initializeWithMockData}>
+                           Initialiser avec des données de démonstration
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-stone-100 flex flex-col items-center justify-center p-4">

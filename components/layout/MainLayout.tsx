@@ -2,7 +2,7 @@ import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { Module, Notification, User } from '../../types';
 import { useAminaShop } from '../../context/AminaShopContext';
 import { permissions } from '../utils/permissions';
-import { DashboardIcon, InventoryIcon, ClientsIcon, SuppliersIcon, POSIcon, OrdersIcon, ReplenishmentIcon, BeakerIcon, MenuIcon, XMarkIcon, ReportsIcon, BellIcon, SettingsIcon, UserCircleIcon } from '../icons';
+import { DashboardIcon, InventoryIcon, ClientsIcon, SuppliersIcon, POSIcon, OrdersIcon, ReplenishmentIcon, MenuIcon, XMarkIcon, ReportsIcon, BellIcon, SettingsIcon, UserCircleIcon } from '../icons';
 import { Modal, Button } from '../ui/Shared';
 
 interface NavLinkProps {
