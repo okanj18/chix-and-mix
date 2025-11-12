@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
 import { User, UserRole, BackupSettings } from '../../types';
 import { Card, Button, Input, Modal, Select } from '../ui/Shared';
@@ -55,30 +55,6 @@ const BackupSettingsCard: React.FC = () => {
         setTimeout(() => setShowSuccess(false), 2000);
     };
     
-    const nextBackupDate = useMemo(() => {
-        if (!settings.enabled || !settings.lastBackupTimestamp) return null;
-        
-        const lastBackup = new Date(settings.lastBackupTimestamp);
-        const nextDate = new Date(lastBackup);
-        
-        if (settings.frequency === 'daily') {
-            nextDate.setDate(lastBackup.getDate() + 1);
-        } else if (settings.frequency === 'weekly') {
-            nextDate.setDate(lastBackup.getDate() + 7);
-        }
-        
-        const [hours, minutes] = settings.time.split(':').map(Number);
-        nextDate.setHours(hours, minutes, 0, 0);
-
-        // If the calculated next backup is in the past, it means it's due
-        if (nextDate < new Date()) {
-            return new Date(); // It should happen now or soon
-        }
-
-        return nextDate;
-
-    }, [settings]);
-
     return (
         <Card>
             <h2 className="text-2xl font-serif font-black text-gray-800 mb-4">Sauvegardes Automatiques</h2>

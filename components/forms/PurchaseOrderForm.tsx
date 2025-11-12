@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
-import { PurchaseOrderItem, Product, PurchaseOrder } from '../../types';
+import { PurchaseOrderItem, PurchaseOrder } from '../../types';
 import { Button, Input, Select, Textarea } from '../ui/Shared';
 import { PlusIcon, TrashIcon } from '../icons';
 

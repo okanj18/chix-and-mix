@@ -55,7 +55,7 @@ export const Input: React.FC<InputProps> = ({ label, id, labelClassName, classNa
 
 // Select
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-    label: string;
+    label?: string;
     children: ReactNode;
     labelClassName?: string;
 }

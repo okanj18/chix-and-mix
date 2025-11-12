@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
-import { OrderItem, Client, Product, ProductVariant, PaymentStatus } from '../../types';
+import { OrderItem, Product, PaymentStatus } from '../../types';
 import { Card, Button, Input, Select, Modal } from '../ui/Shared';
 import { TrashIcon, Squares2x2Icon, Bars3Icon } from '../icons';
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AminaShopProvider, useAminaShop } from './context/AminaShopContext';
 import { MainLayout } from './components/layout/MainLayout';
@@ -12,7 +11,7 @@ import { ReplenishmentPage } from './components/pages/ReplenishmentPage';
 import { ReportsPage } from './components/pages/ReportsPage';
 import { SettingsPage } from './components/pages/SettingsPage';
 import { LoginPage } from './components/pages/LoginPage';
-import { Module, Notification, User } from './types';
+import { Module, Notification } from './types';
 import { permissions } from './components/utils/permissions';
 
 const AppContent: React.FC = () => {

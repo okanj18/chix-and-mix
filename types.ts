@@ -1,3 +1,12 @@
+// Fix: Augment NodeJS.ProcessEnv to avoid redeclaring 'process'.
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      API_KEY: string;
+    }
+  }
+}
+
 export interface ProductVariant {
   size?: string;
   color?: string;

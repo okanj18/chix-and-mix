@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAminaShop } from '../../context/AminaShopContext';
-import { Order, PaymentStatus, DeliveryStatus, OrderItem, Payment, PaymentSchedule, Product, Client, Modification } from '../../types';
-import { Card, Button, Input, Modal, Select, useSortableData, SortableHeader, Textarea } from '../ui/Shared';
-import { EyeIcon, PencilIcon, TrashIcon, CashIcon, PlusIcon, ClockIcon, XMarkIcon, ArrowPathIcon, PrinterIcon, ArchiveBoxIcon } from '../icons';
+import { Order, PaymentStatus, DeliveryStatus, Payment, Modification } from '../../types';
+import { Card, Button, Input, Modal, Select, useSortableData, SortableHeader } from '../ui/Shared';
+import { EyeIcon, PencilIcon, PlusIcon, ClockIcon, PrinterIcon } from '../icons';
 import { PaymentScheduleForm } from '../forms/PaymentScheduleForm';
 
 const getStatusClass = (status: PaymentStatus | DeliveryStatus) => {
@@ -236,11 +236,10 @@ interface OrdersPageProps {
 }
 
 export const OrdersPage: React.FC<OrdersPageProps> = ({ orderToView, clearOrderToView }) => {
-    const { state, actions } = useAminaShop();
+    const { state } = useAminaShop();
     const { orders, clients } = state;
     
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -290,7 +289,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ orderToView, clearOrderT
     const handleEditOrder = (order: Order) => {
         setSelectedOrder(order);
         setIsDetailModalOpen(false); // Close detail view first
-        setIsEditModalOpen(true);
+        // setIsEditModalOpen(true); // Edit functionality is disabled for now
     };
 
     const handleCloseDetailModal = () => {
@@ -371,11 +370,6 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ orderToView, clearOrderT
             <Modal isOpen={isDetailModalOpen} onClose={handleCloseDetailModal} title="Détails de la Commande" contentClassName="max-w-3xl">
                 {selectedOrder && <OrderDetailView order={selectedOrder} onEdit={() => handleEditOrder(selectedOrder)} onClose={handleCloseDetailModal}/>}
             </Modal>
-
-            {/* Edit modal is not implemented yet as it's a complex feature */}
-            {/* <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Modifier la Commande">
-                {selectedOrder && <OrderForm order={selectedOrder} onClose={() => setIsEditModalOpen(false)} />}
-            </Modal> */}
 
         </Card>
     );

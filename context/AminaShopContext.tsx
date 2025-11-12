@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useEffect } from 'react';
-import { Product, Client, Supplier, Order, PurchaseOrder, Payment, SupplierPayment, PaymentSchedule, OrderItem, PurchaseOrderItem, Installment, ProductVariant, PaymentStatus, Modification, ProductReturn, ReturnItem, User, UserRole, BackupSettings, DeliveryStatus } from '../types';
+import { Product, Client, Supplier, Order, PurchaseOrder, Payment, SupplierPayment, PaymentSchedule, OrderItem, PurchaseOrderItem, Installment, ProductVariant, PaymentStatus, Modification, ProductReturn, User, BackupSettings, DeliveryStatus } from '../types';
 import { mockProducts, mockClients, mockSuppliers, mockOrders, mockPurchaseOrders, mockPayments, mockSupplierPayments, mockPaymentSchedules, mockUsers } from '../data/mockData';
-import { permissions } from '../components/utils/permissions';
 
 // --- Helper Functions ---
 const generateUniqueId = (prefix: string): string => {
@@ -385,7 +384,7 @@ export const AminaShopProvider: React.FC<{ children: ReactNode }> = ({ children 
                 const newPayments = [...state.payments];
                 if (newOrder.paymentStatus === 'Payé') {
                     newPayments.push({ id: generateUniqueId('pay'), orderId: newOrder.id, date: new Date(), amount: newOrder.total, method: 'Espèces' });
-                    newOrder.modificationHistory.push(createModification(`Commande marquée comme payée à la création pour ${newOrder.total.toLocaleString()} FCFA.`));
+                    newOrder.modificationHistory?.push(createModification(`Commande marquée comme payée à la création pour ${newOrder.total.toLocaleString()} FCFA.`));
                 }
                 dispatch({ type: 'CREATE_ORDER', payload: { newOrder, newProducts, newPayments } });
             },

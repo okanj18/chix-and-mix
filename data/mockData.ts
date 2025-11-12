@@ -1,4 +1,4 @@
-import { Product, Client, Supplier, Order, PurchaseOrder, Payment, SupplierPayment, PaymentSchedule, Modification, User } from '../types';
+import { Product, Client, Supplier, Order, PurchaseOrder, Payment, SupplierPayment, PaymentSchedule, User } from '../types';
 
 export const mockUsers: User[] = [
   { id: 'user1', name: 'Amina', pin: '1234', role: 'Admin' },
