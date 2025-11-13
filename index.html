@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAACRElEQVRYhe2WPWsUURCFz713ZncQhU3USmyiYCOi0UZEsAk2gg+wsbEQBEtrYyfYCIIpLPwBFtYiNjYKEi9NIgmCNE3cnb3P2V3WjYDYmYkPF4Fh5t43797MyL9W5tatW1lZWfnk/wP8gI/e6/V6Tdd1pU+11lStVq97njebzYYkSbqmae4Fz/P0dDo9mKYZ0zR/WOs+tdaXz/eEIAhQqVTGNE1zP5F1XZdlGY7j/gLYzGg0GpRNWZYViqJ+NE3TNE0/5/MsoiiKovA8b9PpdHkYhjRNu6Io/gvg41kURY6i6KcpimbmqiPDMIzn+XkURb1Go/EwgOf55nk+TdNs2baP+wWwGWmablmWFUVR+bIsP5um6V3XbYriOF55ns/TNF+1Wu0xALbXarVyzvO8ruv+AbCZbDaby7Isx3Hbtm0URfkaYJqm/S6XS0VR/h5gGIZM0/wDYDOD4Zgky3EcSZI8SRI8z9vDMAwA53meIAhmGIbXdR3zPC+VSgXf9wUAnudNkiRlWR7Gcc6yLMu2LMs2TdM0TdM0TdM0TY7j4jiOIAiC4J9F13W5XC7nPA/n/B+M45xSqbAsoiiKruvDMFieZ57n7XQ6lWVZkiQxTRMApmnGMIymaQC2yWSS7/v7AM/zJEmSpmle13UMw8A5D4Aoiq7rhmHYdV1pmgYAKMrSNE3btj3uG8A2m81KkqRtm7Zt+7btJEnCpml+jTH/n+Of+t/wF6gL0eQO217sAAAAAElFTUTSuQmCC" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHIC & MIX Management</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+            },
+            colors: {
+              primary: {
+                '50': '#ecfeff',
+                '100': '#cffafe',
+                '200': '#a5f3fd',
+                '300': '#67e8f9',
+                '400': '#22d3ee',
+                '500': '#06b6d4',
+                '600': '#0891b2',
+                '700': '#0e7490',
+                '800': '#155e75',
+                '900': '#164e63',
+                '950': '#083344',
+              },
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Import Map -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+        "vite": "https://aistudiocdn.com/vite@^7.2.2",
+        "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-stone-100 font-sans antialiased">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
