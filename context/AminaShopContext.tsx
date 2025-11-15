@@ -7,6 +7,8 @@ const generateUniqueId = (prefix: string): string => {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 interface AppState {
   products: Product[];
   clients: Client[];
@@ -23,9 +25,10 @@ interface AppState {
   backupSettings: BackupSettings;
   isLoading: boolean;
   isInitialized: boolean;
+  saveStatus: SaveStatus;
 }
 
-const emptyState: Omit<AppState, 'users' | 'currentUser' | 'isLoading' | 'categories' | 'isInitialized'> = {
+const emptyState: Omit<AppState, 'users' | 'currentUser' | 'isLoading' | 'categories' | 'isInitialized' | 'saveStatus'> = {
   products: [],
   clients: [],
   suppliers: [],
@@ -64,6 +67,7 @@ const initialState: AppState = {
     },
     isLoading: true,
     isInitialized: false,
+    saveStatus: 'idle',
 };
 
 const appReducer = (state: AppState, action: any): AppState => {
@@ -197,12 +201,12 @@ const appReducer = (state: AppState, action: any): AppState => {
             };
         case 'RESET_ALL_DATA':
             sessionStorage.removeItem('aminaShopCurrentUser');
-            localStorage.removeItem('aminaShopState'); // Also clear the main storage
+            // No longer need to remove from localStorage, will be handled by server
             return {
-                ...initialState, // Reset to the very initial state
+                ...initialState, 
                 isLoading: false,
-                isInitialized: false, // Mark as not initialized
-                users: mockUsers, // Keep users for login
+                isInitialized: false, 
+                users: mockUsers, 
             };
         case 'RESTORE_DATA':
             sessionStorage.removeItem('aminaShopCurrentUser');
@@ -219,6 +223,8 @@ const appReducer = (state: AppState, action: any): AppState => {
                 ...state,
                 backupSettings: { ...state.backupSettings, lastBackupTimestamp: action.payload }
             };
+        case 'SET_SAVE_STATUS':
+             return { ...state, saveStatus: action.payload };
         default:
             return state;
     }
@@ -230,20 +236,29 @@ export const AminaShopProvider: React.FC<{ children: ReactNode }> = ({ children 
     const [state, dispatch] = useReducer(appReducer, initialState);
 
     useEffect(() => {
-        dispatch({ type: 'SET_LOADING', payload: true });
-
-        const safeNewDate = (d: any): Date => {
-            if (d === null || d === undefined) return new Date(0); 
-            const date = new Date(d);
-            return isNaN(date.getTime()) ? new Date() : date;
-        };
-        
-        try {
-            const savedStateJSON = localStorage.getItem('aminaShopState');
-            
-            if (savedStateJSON) {
-                const loadedData = JSON.parse(savedStateJSON);
-
+        const loadData = async () => {
+            dispatch({ type: 'SET_LOADING', payload: true });
+    
+            const safeNewDate = (d: any): Date => {
+                if (d === null || d === undefined) return new Date(0); 
+                const date = new Date(d);
+                return isNaN(date.getTime()) ? new Date() : date;
+            };
+    
+            try {
+                const response = await fetch('/api/data');
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        // Data doesn't exist, start fresh
+                        console.log("No existing data on server, initializing with a clean slate.");
+                        dispatch({ type: 'SET_INITIAL_DATA', payload: { ...emptyState, users: mockUsers, isInitialized: false } });
+                        return;
+                    }
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+    
+                const loadedData = await response.json();
+    
                 if (loadedData && typeof loadedData === 'object' && Array.isArray(loadedData.users)) {
                     const finalPayload = {
                         products: Array.isArray(loadedData.products) ? loadedData.products : [],
@@ -273,32 +288,69 @@ export const AminaShopProvider: React.FC<{ children: ReactNode }> = ({ children 
                         }
                     }
                 } else {
-                    // Data is malformed or doesn't exist, start fresh but keep users.
-                    dispatch({ type: 'SET_INITIAL_DATA', payload: { ...emptyState, users: mockUsers } });
+                     dispatch({ type: 'SET_INITIAL_DATA', payload: { ...emptyState, users: mockUsers } });
                 }
-            } else {
-                 // No saved state, start with a clean slate, ready for initialization.
+            } catch (error) {
+                console.error("Critical error during data loading. Starting fresh:", error);
                 dispatch({ type: 'SET_INITIAL_DATA', payload: { ...emptyState, users: mockUsers, isInitialized: false } });
+                sessionStorage.removeItem('aminaShopCurrentUser');
+            } finally {
+                dispatch({ type: 'SET_LOADING', payload: false });
             }
-        } catch (error) {
-            console.error("Critical error during data loading. Starting fresh:", error);
-            dispatch({ type: 'SET_INITIAL_DATA', payload: { ...emptyState, users: mockUsers, isInitialized: false } });
-            sessionStorage.removeItem('aminaShopCurrentUser');
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-        }
+        };
+
+        loadData();
     }, []);
 
+    // Effect for debounced saving
     useEffect(() => {
-        if (!state.isLoading && state.isInitialized) {
-            const { isLoading, currentUser, ...stateToSave } = state;
-            try {
-                localStorage.setItem('aminaShopState', JSON.stringify(stateToSave));
-            } catch (error) {
-                console.error("Failed to save state to localStorage:", error);
-            }
+        if (state.isLoading || !state.isInitialized) {
+            return;
         }
-    }, [state]);
+
+        dispatch({ type: 'SET_SAVE_STATUS', payload: 'idle' });
+
+        const handler = setTimeout(() => {
+            const saveData = async () => {
+                dispatch({ type: 'SET_SAVE_STATUS', payload: 'saving' });
+                try {
+                    const { isLoading, currentUser, isInitialized, saveStatus, ...stateToSave } = state;
+                    const response = await fetch('/api/data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(stateToSave),
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+                    dispatch({ type: 'SET_SAVE_STATUS', payload: 'saved' });
+                } catch (error) {
+                    console.error("Failed to save state to server:", error);
+                    dispatch({ type: 'SET_SAVE_STATUS', payload: 'error' });
+                }
+            };
+            saveData();
+        }, 1500);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [
+        state.products, state.clients, state.suppliers, state.orders, 
+        state.returns, state.purchaseOrders, state.payments, 
+        state.supplierPayments, state.paymentSchedules, state.categories, 
+        state.users, state.backupSettings
+    ]);
+
+    // Effect to clear the 'saved' status after a delay
+    useEffect(() => {
+        if (state.saveStatus === 'saved') {
+            const timer = setTimeout(() => {
+                dispatch({ type: 'SET_SAVE_STATUS', payload: 'idle' });
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [state.saveStatus]);
 
     const actions = useMemo(() => {
         const createModification = (description: string): Modification => ({

@@ -20,6 +20,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["App.tsx", "index.tsx", "types.ts", "components", "context", "data"],
+  "include": ["App.tsx", "index.tsx", "types.ts", "components", "context", "data", "netlify/functions"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

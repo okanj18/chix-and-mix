@@ -173,4 +173,4 @@ export interface BackupSettings {
   lastBackupTimestamp: number | null;
 }
 
-export type Module = 'dashboard' | 'inventory' | 'clients' | 'suppliers' | 'productList' | 'orders' | 'approvisionnement' | 'reports' | 'settings';
+export type Module = 'dashboard' | 'inventory' | 'clients' | 'suppliers' | 'productList' | 'orders' | 'approvisionnement' | 'reports' | 'settings' | 'logoProposals';

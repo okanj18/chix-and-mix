@@ -2,7 +2,7 @@ import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { Module, Notification, User } from '../../types';
 import { useAminaShop } from '../../context/AminaShopContext';
 import { permissions } from '../utils/permissions';
-import { DashboardIcon, InventoryIcon, ClientsIcon, SuppliersIcon, POSIcon, OrdersIcon, ReplenishmentIcon, MenuIcon, XMarkIcon, ReportsIcon, BellIcon, SettingsIcon, UserCircleIcon } from '../icons';
+import { DashboardIcon, InventoryIcon, ClientsIcon, SuppliersIcon, POSIcon, OrdersIcon, ReplenishmentIcon, MenuIcon, XMarkIcon, ReportsIcon, BellIcon, SettingsIcon, UserCircleIcon, ArrowPathIcon, CheckCircleIcon, XCircleIcon, BeakerIcon } from '../icons';
 import { Modal, Button } from '../ui/Shared';
 
 interface NavLinkProps {
@@ -49,6 +49,7 @@ const Sidebar: React.FC<{
     { icon: <ClientsIcon />, label: "Clients", module: "clients" },
     { icon: <SuppliersIcon />, label: "Fournisseurs", module: "suppliers" },
     { icon: <ReportsIcon />, label: "Rapports", module: "reports" },
+    { icon: <BeakerIcon />, label: "Idées de Logo", module: "logoProposals" },
     { icon: <SettingsIcon />, label: "Paramètres", module: "settings" },
   ];
 
@@ -90,6 +91,32 @@ const timeSince = (date: Date) => {
     return `à l'instant`;
 };
 
+const SaveStatusIndicator: React.FC = () => {
+    const { state } = useAminaShop();
+    const { saveStatus } = state;
+
+    const statusMap = {
+        saving: { icon: <ArrowPathIcon className="w-5 h-5 animate-spin" />, text: 'Sauvegarde...', color: 'text-gray-600' },
+        saved: { icon: <CheckCircleIcon className="w-5 h-5" />, text: 'Synchronisé', color: 'text-green-600' },
+        error: { icon: <XCircleIcon className="w-5 h-5" />, text: 'Erreur', color: 'text-red-600' },
+        idle: { icon: null, text: '', color: '' },
+    };
+
+    const currentStatus = statusMap[saveStatus];
+
+    if (saveStatus === 'idle') {
+        return <div className="w-36">&nbsp;</div>; // Reserve space
+    }
+
+    return (
+        <div className={`flex items-center gap-2 text-sm font-medium transition-opacity duration-300 ${currentStatus.color} w-36`}>
+            {currentStatus.icon}
+            <span>{currentStatus.text}</span>
+        </div>
+    );
+};
+
+
 const Header: React.FC<{ 
     moduleName: Module; 
     onMenuClick: () => void; 
@@ -107,6 +134,7 @@ const Header: React.FC<{
     clients: 'Clients',
     suppliers: 'Fournisseurs',
     reports: 'Rapports de Ventes',
+    logoProposals: 'Propositions de Logo IA',
     settings: 'Paramètres',
   };
 
@@ -157,6 +185,7 @@ const Header: React.FC<{
               {moduleName !== 'dashboard' && <h1 className="text-2xl font-serif font-black text-gray-900">{displayName}</h1>}
           </div>
           <div className="flex items-center gap-4">
+              <SaveStatusIndicator />
               <div className="relative" ref={popoverRef}>
                   <button onClick={handleTogglePopover} className="relative p-2 text-gray-600 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                       <span className="sr-only">Voir les notifications</span>
